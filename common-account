@@ -1,0 +1,4 @@
+#/etc/pam.d/common-account:
+
+account sufficient      pam_winbind.so
+account required        pam_unix.so

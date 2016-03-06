@@ -1,0 +1,4 @@
+#/etc/pam.d/common-auth:
+
+auth    sufficient      pam_winbind.so krb5_auth krb5_ccache_type=FILE
+auth    required        pam_unix.so nullok_secure use_first_pass
