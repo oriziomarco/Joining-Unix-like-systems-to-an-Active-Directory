@@ -1,0 +1,96 @@
+Installare Samba e WinBind e Kerberos
+sudo apt-get install samba winbind
+sudo apt-get install krb5-kdc krb5-admin-server
+  alla richiesta del realm inserire LOGOTEL.NET
+
+editare la sezione global del file /etc/samba/smb.conf come segue:
+##########################################################################
+[global]
+	password server = skipper.logotel.net
+	max log size = 100
+	reset on zero vc = yes
+	template shell = /bin/bash
+	idmap gid = 10000-20000
+	winbind use default domain = yes
+	dns proxy = no
+	winbind refresh tickets = yes
+	os level = 20
+	security = ads
+	template homedir = /home/%D/%U
+	encrypt passwords = yes
+	realm = LOGOTEL.NET
+	winbind separator = +
+	server string = %h Samba %v
+	log file = /var/log/samba/log.%m
+	workgroup = LOGONET
+	auth methods = guest, sam, winbind
+	browseable = no
+	idmap uid = 10000-20000
+	############################################################################
+	
+	
+	editare il file /etc/nsswitch.conf come segue:
+	###################################################
+	  passwd:         compat winbind
+    group:          compat winbind
+    shadow:         compat
+  ##################################################
+  
+  editare il file /etc/pam.d/common-account come segue:
+  ###############################################################
+    account sufficient       pam_winbind.so
+    account required         pam_unix.so
+  ##############################################################
+  
+  editare il file /etc/pam.d/common-auth come segue:
+  ##############################################################
+  auth sufficient pam_winbind.so
+  auth sufficient pam_unix.so nullok_secure use_first_pass
+  auth required   pam_deny.so
+  ###############################################################
+  
+  editare il file /etc/pam.d/common-auth come segue:
+  ###############################################################
+  auth    sufficient      pam_winbind.so krb5_auth krb5_ccache_type=FILE
+  auth    sufficient      pam_unix.so nullok_secure use_first_pass
+  auth    required        pam_deny.so
+  ###################################################################
+
+  editare il file /etc/pam.d/common-session come segue:
+  ###################################################################
+  session   required         pam_unix.so
+  session required           pam_mkhomedir.so umask=0077 skel=/etc/skel
+  ###################################################################
+  
+  editare il fiel /etc/pam.d/sudo come segue:
+  ####################################################################
+  auth       required   pam_env.so readenv=1 user_readenv=0
+  auth       required   pam_env.so readenv=1 envfile=/etc/default/locale user_readenv=0
+  @include common-auth
+  @include common-account
+  @include common-session-noninteractive
+  #####################################################################
+  
+  editare il file /etc/resolv.conf come segue:
+  #####################################################################
+  nameserver 192.168.0.1
+  #####################################################################
+  
+  creare la directory per i profili Active directory con il comando
+  mkdir /home/LOGONET
+  
+  riavviare i servizi samba e winbind
+  sudo service samba restart
+  sudo service winbind restart
+  
+  sudo kinit superadmin@LOGOTEL.NET
+  inserire la password per superadmin:
+  
+  sudo net ads join -U superadmin
+  inserire la password per superadmin:
+  
+  verificare il successo del join a dominio con:
+  wbinfo -u  (per vedere la lista degli user Active Direcotry)
+  wbinfo -g  (per vedere la lista dei gruppi di Active Directory)
+  
+  
